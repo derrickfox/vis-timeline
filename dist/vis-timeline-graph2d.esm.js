@@ -5,7 +5,7 @@
  * Create a fully customizable, interactive timeline with items and ranges.
  *
  * @version 0.0.0-no-version
- * @date    2019-10-03T21:11:36Z
+ * @date    2019-10-08T23:17:22Z
  *
  * @copyright (c) 2011-2017 Almende B.V, http://almende.com
  * @copyright (c) 2018-2019 visjs contributors, https://github.com/visjs
@@ -31244,16 +31244,25 @@ function (_Component) {
     }
     /**
      * Set custom marker.
-     * @param {string} title
+     * @param {string} [title] Title of the custom marker
+     * @param {boolean} [editable] Make the custom marker editable.
      */
 
   }, {
     key: "setCustomMarker",
-    value: function setCustomMarker(title) {
+    value: function setCustomMarker(title, editable) {
       var marker = document.createElement('div');
       marker.className = "vis-custom-time-marker";
       marker.innerHTML = title;
       marker.style.position = 'absolute';
+
+      if (editable) {
+        marker.setAttribute('contenteditable', 'true');
+        marker.addEventListener('pointerdown', function () {
+          marker.focus();
+        });
+      }
+
       this.bar.appendChild(marker);
     }
     /**
@@ -31961,12 +31970,13 @@ function () {
     /**
      * Set a custom marker for the custom time bar.
      * @param {string} [title] Title of the custom marker.
-     * @param {number} [id=undefined] Id of the custom time bar.
+     * @param {number} [id=undefined] Id of the custom marker.
+     * @param {boolean} [editable=false] Make the custom marker editable.
      */
 
   }, {
     key: "setCustomTimeMarker",
-    value: function setCustomTimeMarker(title, id) {
+    value: function setCustomTimeMarker(title, id, editable) {
       var customTimes = this.customTimes.filter(function (component) {
         return component.options.id === id;
       });
@@ -31976,7 +31986,7 @@ function () {
       }
 
       if (customTimes.length > 0) {
-        customTimes[0].setCustomMarker(title);
+        customTimes[0].setCustomMarker(title, editable);
       }
     }
     /**
@@ -36433,6 +36443,7 @@ function (_Item) {
     value: function _getDomComponentsSizes() {
       // determine from css whether this box has overflow
       this.overflow = window.getComputedStyle(this.dom.frame).overflow !== 'hidden';
+      this.whiteSpace = window.getComputedStyle(this.dom.content).whiteSpace !== 'nowrap';
       return {
         content: {
           width: this.dom.content.offsetWidth
@@ -36559,10 +36570,10 @@ function (_Item) {
         if (end > 2 * parentWidth) {
           end = 2 * parentWidth;
         }
-      } // add 0.5 to compensate floating-point values rounding
+      } //round to 3 decimals to compensate floating-point values rounding
 
 
-      var boxWidth = Math.max(end - start + 0.5, 1);
+      var boxWidth = Math.max(Math.round((end - start) * 1000) / 1000, 1);
 
       if (this.overflow) {
         if (this.options.rtl) {
@@ -36593,6 +36604,10 @@ function (_Item) {
       }
 
       this.dom.box.style.width = "".concat(boxWidth, "px");
+
+      if (this.whiteSpace) {
+        this.height = this.dom.box.offsetHeight;
+      }
 
       switch (align) {
         case 'left':
@@ -38056,7 +38071,7 @@ function () {
           }
 
           if (group) {
-            group.add(cluster, false);
+            group.add(cluster);
             cluster.group = group;
           }
         }
@@ -38083,7 +38098,7 @@ function () {
       cluster = this.createClusterItem(data, conversion, clusterOptions);
 
       if (group) {
-        group.add(cluster, false);
+        group.add(cluster);
         cluster.group = group;
       }
 
